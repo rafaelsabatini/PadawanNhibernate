@@ -11,6 +11,9 @@ Install-Package Flunt
 Install-Package NHibernate
 Install-Package FluentMigrator
 Install-Package FluentMigrator.Tools
+Install-Package System.Data.SqlClient
+
+Install-Package Microsoft.Extensions.Configuration.UserSecrets
 ```
 ## Dicas e sugestões
 
