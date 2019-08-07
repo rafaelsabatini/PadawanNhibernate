@@ -1,4 +1,5 @@
 ﻿using Flunt.Validations;
+using Padawan.Domain.Commands;
 using Padawan.Shared;
 using Padawan.Shared.Entities;
 using Padawan.Shared.Messages;
@@ -31,5 +32,16 @@ namespace Padawan.Domain.Entities
                 .HasMinLen(Name, Constantes.LENGTH_MIN, "Name", Messages.LENGTH_05_MIN));
         }
         public virtual string Name { get; protected set; }
+
+        public AccountCommandResult ToDto()
+        {
+            return new AccountCommandResult
+            {
+                Id = Id,
+                Name = Name,
+                CreatedDate = CreatedDate,
+                CreatedByUserId = CreatedByUserId,
+            };
+        }
     }
 }

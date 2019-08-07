@@ -16,13 +16,28 @@ namespace Padawan.Api
     {
         public static IConfigurationRoot Configuration { get; set; }
 
-        public void ConfigureServices(IServiceCollection services)
+
+        public Startup(IHostingEnvironment hostingEnvironment)
         {
             var builder = new ConfigurationBuilder()
-                            .SetBasePath(Directory.GetCurrentDirectory())
-                            .AddJsonFile("appsettings.json");
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.local.json", optional: true)
+                .AddEnvironmentVariables();
+
+            // serve para incluir as variaveis locais do desenvolvedor sem ter que mudar o arquivo appsettings.json
+            //para incluir suas configurações pessoais clicar com o botão diretio em cima do projeto Padawan.Api e clicar em manage user sercrets
+            if (hostingEnvironment.IsDevelopment())
+                builder.AddUserSecrets<Startup>();
 
             Configuration = builder.Build();
+            
+        }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+          
+
             AppSettings.ConnectionString = $"{Configuration["connectionString"]}";
 
             services.AddMvc();
@@ -37,7 +52,7 @@ namespace Padawan.Api
 
             services.AddSingleton(PadawanNHibernateHelper.SessionFactory());
 
-            services.AddTransient<IUow, Uow>();
+            services.AddScoped<IUow, Uow>();
 
             services.AddTransient<IAccountRepository, AccountRepository>();
 

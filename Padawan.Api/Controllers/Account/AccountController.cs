@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Padawan.Api.Controllers.Core;
 using Padawan.Domain.Commands;
 using Padawan.Domain.Entities;
 using Padawan.Domain.Handlers;
 using Padawan.Domain.Repositories;
+using Padawan.Infra.Transations;
 using Padawan.Shared;
 using Padawan.Shared.Commands;
 using Padawan.Shared.Entities;
@@ -14,12 +16,13 @@ using System.Threading.Tasks;
 namespace Padawan.Api.Controllers
 {
     [Route(Constantes.API + "v1/cadastros")]
-    public class AccountController : Controller
+    public class AccountController : BaseController
     {
         private readonly IAccountRepository _repository;
         private readonly AccountHandler _handler;
 
-        public AccountController(IAccountRepository repository, AccountHandler handler)
+
+        public AccountController(IAccountRepository repository, AccountHandler handler, IUow uow) : base(uow)
         {
             _repository = repository;
             _handler = handler;
@@ -46,44 +49,75 @@ namespace Padawan.Api.Controllers
         [Route("{id}")]
         public async Task<IActionResult> GetById(long id)
         {
-            Account account = await _repository.GetById(id);
-            if (account == null)
-                return Ok(new CommandResult(false, Messages.NO_RECORDS_FOUND, null));
-            else
-                return Ok(new CommandResult(true,"Registro encontrado",
-                    new AccountCommandResult
-                    {
-                        Id = account.Id,
-                        Name = account.Name.ToString(),
-                        CreatedDate = account.CreatedDate,
-                        CreatedByUserId = account.CreatedByUserId,
-                    }));
+            try
+            {
+                Account account = await _repository.GetById(id);
+                if (account == null)
+                    return await Response(null, "id", Messages.NO_RECORDS_FOUND);
+
+                return await Response(account.ToDto());
+            }
+            catch (Exception ex)
+            {
+                return await TryErrors(ex);
+            }
+
+
         }
 
         [HttpPost]
-        public async Task<ICommandResult> Post([FromBody]CreateAccountCommand command)
+        public async Task<IActionResult> Post([FromBody]CreateAccountCommand command)
         {
-            ICommandResult result = await _handler.Handle(command);
-            return result;
+            try
+            {
+                _uow.OpenTransaction();
+                var result = await _handler.Handle(command);
+
+                return await Response(result, _handler.Notifications);
+            }
+
+            catch (Exception ex)
+            {
+                return await TryErrors(ex);
+            }
         }
 
+
         [HttpPut]
-        public async Task<ICommandResult> Put([FromBody]EditAccountCommand command)
+        public async Task<IActionResult> Put([FromBody]EditAccountCommand command)
         {
-            ICommandResult result = await _handler.Handle(command);
-            return result;
+            try
+            {
+                _uow.OpenTransaction();
+                var result = await _handler.Handle(command);
+                return await Response(result, _handler.Notifications);
+            }
+            catch (Exception ex)
+            {
+                return await TryErrors(ex);
+            }
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public async Task<ICommandResult> Delete(long id)
+        public async Task<IActionResult> Delete(long id)
         {
-            var command = new DeleteAccountCommand
+            try
             {
-                Id = id
-            };
-            ICommandResult result = await _handler.Handle(command);
-            return result;
+                var command = new DeleteAccountCommand
+                {
+                    Id = id
+                };
+                _uow.OpenTransaction();
+
+                var result = await _handler.Handle(command);
+                return await Response(result, _handler.Notifications);
+
+            }
+            catch (Exception ex)
+            {
+                return await TryErrors(ex);
+            }
         }
     }
 }

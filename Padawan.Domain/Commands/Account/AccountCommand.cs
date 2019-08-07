@@ -3,7 +3,7 @@ using System;
 
 namespace Padawan.Domain.Commands
 {
-    public class AccountCommandResult
+    public class AccountCommandResult: ICommandResult
     {
         public long Id { get; set; }
         public string Name { get; set; }

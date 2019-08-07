@@ -2,6 +2,7 @@
 using NHibernate.Linq;
 using Padawan.Domain.Entities;
 using Padawan.Domain.Repositories;
+using Padawan.Infra.Transations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,50 +14,50 @@ namespace Padawan.Infra.Repositories
 {
     public class AccountRepository : IAccountRepository
     {
-        private readonly ISession _session;
+        private readonly IUow _uow;
 
-        public AccountRepository(ISession session)
+        public AccountRepository(IUow uow)
         {
-            _session = session;
+            _uow = uow;
         }
 
         public async Task Create(Account account)
         {
-            await _session.SaveAsync(account);
-            await _session.FlushAsync();
+            await _uow.GetSession().SaveAsync(account);
+            await _uow.GetSession().FlushAsync();
         }
 
         public async Task Update(Account account)
         {
-            await _session.UpdateAsync(account);
-            await _session.FlushAsync();
+            await _uow.GetSession().UpdateAsync(account);
+            await _uow.GetSession().FlushAsync();
         }
 
         public async Task Delete(Account account)
         {
-            await _session.DeleteAsync(account);
-            await _session.FlushAsync();
+            await _uow.GetSession().DeleteAsync(account);
+            await _uow.GetSession().FlushAsync();
         }
 
         public async Task<List<Account>> GetListBy(Expression<Func<Account, bool>> expression, int page, int pageSize)
         {
-            return await _session.Query<Account>().Skip(page).Take(pageSize).Where(expression).ToListAsync();
+            return await _uow.GetSession().Query<Account>().Skip(page).Take(pageSize).Where(expression).ToListAsync();
         }
 
         public async Task<List<Account>> GetList(int page, int pageSize)
         {
-            return await _session.Query<Account>().Skip(page).Take(pageSize).ToListAsync(); ;
+            return await _uow.GetSession().Query<Account>().Skip(page).Take(pageSize).ToListAsync(); ;
         }
 
         public async Task<Account> GetById(long id)
         {
-            _session.CacheMode = CacheMode.Normal;
-            return await _session.GetAsync<Account>(id);
+            _uow.GetSession().CacheMode = CacheMode.Normal;
+            return await _uow.GetSession().GetAsync<Account>(id);
         }
 
         public Task<Account> GetBy(Expression<Func<Account, bool>> expression)
         {
-            return _session.Query<Account>().Where(expression).AsQueryable().FirstOrDefaultAsync();
+            return _uow.GetSession().Query<Account>().Where(expression).AsQueryable().FirstOrDefaultAsync();
         }
     }
 }
